@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Anni's Habit Tracker</title>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f7fb;
+      padding: 16px;
+      color: #222;
+    }
+    .app {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      margin-bottom: 4px;
+      font-weight: 600;
+      gap: 8px;
+    }
+    .title-left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    #liveClock {
+      font-weight: 500;
+      font-size: 13px;
+      color: #3b4d75;
+    }
+
+    .nav-links {
+      margin-bottom: 10px;
+    }
+    .nav-links a {
+      margin-right: 10px;
+      font-size: 13px;
+      text-decoration: none;
+      color: #1f4f8f;
+      font-weight: 600;
+    }
+
+    .top-row {
+      display: grid;
+      grid-template-columns: 220px 1.6fr 1.1fr;
+      gap: 16px;
+    }
+
+    .card {
+      background: #f9fbff;
+      border-radius: 8px;
+      border: 1px solid #dde3f0;
+      padding: 12px 16px;
+    }
+    .card h3 {
+      font-size: 14px;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #37527a;
+    }
+
+    /* Calendar bar */
+    .calendar-bar {
+      display: flex;
+      overflow-x: auto;
+      gap: 6px;
+      font-size: 11px;
+      margin-top: 4px;
+    }
+    .cal-day {
+      min-width: 32px;
+      padding: 4px 0;
+      text-align: center;
+      border-radius: 6px;
+      background: #eef2ff;
+      color: #45527a;
+    }
+    .cal-day span {
+      display: block;
+    }
+    .cal-day.today {
+      background: #4c8df5;
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    /* Left panel */
+    .field { margin-bottom: 8px; font-size: 12px; }
+    label { display: block; margin-bottom: 2px; }
+    select {
+      width: 100%;
+      padding: 4px 6px;
+      border-radius: 4px;
+      border: 1px solid #c9d3f0;
+      background: #fff;
+    }
+    .side-stats {
+      margin-top: 10px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    /* Weekly bars */
+    .weeks {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      height: 160px;
+      margin-top: 6px;
+    }
+    .week {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 11px;
+    }
+    .bar-wrapper {
+      width: 22px;
+      height: 110px;
+      background: #edf2ff;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #c9d3f0;
+      display: flex;
+      align-items: flex-end;
+      margin-bottom: 4px;
+    }
+    .bar {
+      width: 100%;
+      background: #4c8df5;
+      transition: height 0.3s;
+    }
+
+    /* Donut */
+    .donut-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 4px;
+    }
+    .donut {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at center, #ffffff 56%, transparent 57%),
+        conic-gradient(#4caf50 var(--percent), #e0e7f5 0);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+    .donut-label {
+      position: absolute;
+      text-align: center;
+      font-size: 14px;
+    }
+    .donut-label span {
+      display: block;
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .donut-stats {
+      margin-top: 8px;
+      font-size: 12px;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    /* Daily grid */
+    .grid-card { margin-top: 4px; }
+    .daily-grid {
+      overflow-x: auto;
+      margin-top: 8px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 800px;
+      font-size: 12px;
+    }
+    th, td {
+      border: 1px solid #dde3f0;
+      text-align: center;
+      padding: 4px;
+    }
+    th.habit-col, td.habit-col {
+      text-align: left;
+      min-width: 160px;
+      background: #f3f6ff;
+      font-weight: 600;
+    }
+    th.day-header {
+      background: #f1f3f8;
+      font-weight: 500;
+    }
+    td.day-cell {
+      width: 24px;
+      cursor: pointer;
+      background: #ffffff;
+    }
+    td.day-cell:hover {
+      background: #e8f1ff;
+    }
+    td.day-cell.done {
+      background: #4caf50;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    @media (max-width: 900px) {
+      .top-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- TOP BAR -->
+    <div class="title-bar">
+      <div class="title-left">
+        <div id="monthLabel"></div>
+      </div>
+      <div>Anni's Habit Tracker</div>
+      <div id="liveClock"></div>
+    </div>
+
+    <!-- NAV LINKS -->
+    <div class="nav-links">
+      <a href="index.html">Dashboard</a>
+      <a href="history.html">View History</a>
+    </div>
+
+    <!-- CALENDAR STRIP -->
+    <div class="card">
+      <h3>Calendar</h3>
+      <div class="calendar-bar" id="calendarBar"></div>
+    </div>
+
+    <!-- TOP SECTION -->
+    <div class="top-row">
+      <!-- Left panel -->
+      <div class="card">
+        <h3>Habit Tracker</h3>
+        <div class="field">
+          <label>Month</label>
+          <select id="monthSelect"></select>
+        </div>
+        <div class="side-stats" id="sideStats"></div>
+      </div>
+
+      <!-- Weekly bars -->
+      <div class="card">
+        <h3>Weekly Progress</h3>
+        <div class="weeks" id="weeksContainer"></div>
+      </div>
+
+      <!-- Donut -->
+      <div class="card">
+        <h3>Monthly Overview</h3>
+        <div class="donut-wrapper">
+          <div class="donut" id="donut" style="--percent: 0deg;">
+            <div class="donut-label">
+              <span id="percentLabel">0%</span>
+              Complete
+            </div>
+          </div>
+        </div>
+        <div class="donut-stats" id="donutStats"></div>
+      </div>
+    </div>
+
+    <!-- DAILY GRID -->
+    <div class="card grid-card">
+      <h3>Daily Habits</h3>
+      <div class="daily-grid">
+        <table id="habitTable"></table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const habits = [
+      "Wake up @ 6AM",
+      "No Social Media till 9",
+      "Workout / Walking",
+      "Study, 60 min",
+      "Read 30 min"
+    ];
+
+    const today = new Date();
+    const year  = today.getFullYear();
+    const month = today.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    document.getElementById("monthLabel").textContent =
+      today.toLocaleString("default", { month: "long", year: "numeric" });
+
+    // Live clock
+    function updateClock() {
+      const now = new Date();
+      const options = { hour: "2-digit", minute: "2-digit", second: "2-digit" };
+      document.getElementById("liveClock").textContent =
+        now.toLocaleTimeString(undefined, options);
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // Calendar strip
+    const calendarBar = document.getElementById("calendarBar");
+    const weekdays = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateObj = new Date(year, month, d);
+      const div = document.createElement("div");
+      div.className = "cal-day";
+      if (d === today.getDate()) div.classList.add("today");
+
+      const dow = document.createElement("span");
+      dow.textContent = weekdays[dateObj.getDay()];
+      const num = document.createElement("span");
+      num.textContent = d;
+
+      div.appendChild(dow);
+      div.appendChild(num);
+      calendarBar.appendChild(div);
+    }
+
+    // Month select (current only)
+    const monthSelect = document.getElementById("monthSelect");
+    const currentOption = document.createElement("option");
+    currentOption.value = `${year}-${month+1}`;
+    currentOption.textContent = today.toLocaleString("default",
+      { month: "long", year: "numeric" });
+    currentOption.selected = true;
+    monthSelect.appendChild(currentOption);
+    monthSelect.disabled = true;
+
+    const storageKey = `habit-${year}-${month+1}`;
+    const stored = JSON.parse(localStorage.getItem(storageKey) || "{}");
+
+    const table = document.getElementById("habitTable");
+
+    // Daily grid header
+    const headerRow = document.createElement("tr");
+    const habitHead = document.createElement("th");
+    habitHead.textContent = "Daily Habits";
+    habitHead.classList.add("habit-col");
+    headerRow.appendChild(habitHead);
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const th = document.createElement("th");
+      th.textContent = d;
+      th.classList.add("day-header");
+      headerRow.appendChild(th);
+    }
+    table.appendChild(headerRow);
+
+    // Rows with time-stamped storage
+    habits.forEach((habit, hIndex) => {
+      const tr = document.createElement("tr");
+
+      const habitCell = document.createElement("td");
+      habitCell.textContent = habit;
+      habitCell.classList.add("habit-col");
+      tr.appendChild(habitCell);
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const td = document.createElement("td");
+        td.classList.add("day-cell");
+        const key = `${hIndex}-${d}`;
+
+        if (stored[key]?.done) td.classList.add("done");
+
+        td.addEventListener("click", () => {
+          const now = new Date();
+          const isDone = !stored[key]?.done; // toggle
+
+          if (isDone) {
+            td.classList.add("done");
+            stored[key] = {
+              done: true,
+              completedAt: now.toISOString()
+            };
+          } else {
+            td.classList.remove("done");
+            stored[key] = {
+              done: false,
+              completedAt: null
+            };
+          }
+
+          localStorage.setItem(storageKey, JSON.stringify(stored));
+          recalcOverview();
+        });
+
+        tr.appendChild(td);
+      }
+      table.appendChild(tr);
+    });
+
+    const donut      = document.getElementById("donut");
+    const percentLbl = document.getElementById("percentLabel");
+    const donutStats = document.getElementById("donutStats");
+    const weeksCont  = document.getElementById("weeksContainer");
+    const sideStats  = document.getElementById("sideStats");
+
+    function recalcOverview() {
+      const habitsCount = habits.length;
+      const totalChecks = habitsCount * daysInMonth;
+      let doneChecks = 0;
+
+      for (let h = 0; h < habitsCount; h++) {
+        for (let d = 1; d <= daysInMonth; d++) {
+          const key = `${h}-${d}`;
+          if (stored[key]?.done) doneChecks++;
+        }
+      }
+
+      const overallPercent = totalChecks === 0
+        ? 0
+        : Math.round((doneChecks / totalChecks) * 100);
+
+      const degrees = (overallPercent / 100) * 360;
+      donut.style.setProperty("--percent", degrees + "deg");
+      percentLbl.textContent = overallPercent + "%";
+      donutStats.textContent =
+        `Completed ${doneChecks} of ${totalChecks} checks this month.`;
+
+      sideStats.textContent =
+        `Month completion: ${overallPercent}% (${doneChecks}/${totalChecks}).`;
+
+      // Weekly bars
+      weeksCont.innerHTML = "";
+      const weekNames = ["Week 1", "Week 2", "Week 3", "Week 4", "Week 5"];
+
+      for (let w = 0; w < 5; w++) {
+        const startDay = w * 7 + 1;
+        const endDay   = Math.min(startDay + 6, daysInMonth);
+        if (startDay > daysInMonth) break;
+
+        let weekDone = 0;
+        let weekTotal = habitsCount * (endDay - startDay + 1);
+
+        for (let h = 0; h < habitsCount; h++) {
+          for (let d = startDay; d <= endDay; d++) {
+            const key = `${h}-${d}`;
+            if (stored[key]?.done) weekDone++;
+          }
+        }
+
+        const weekPercent = weekTotal === 0
+          ? 0
+          : Math.round((weekDone / weekTotal) * 100);
+
+        const weekDiv = document.createElement("div");
+        weekDiv.className = "week";
+
+        const barWrap = document.createElement("div");
+        barWrap.className = "bar-wrapper";
+
+        const bar = document.createElement("div");
+        bar.className = "bar";
+        bar.style.height = weekPercent + "%";
+
+        barWrap.appendChild(bar);
+        weekDiv.appendChild(barWrap);
+
+        const label = document.createElement("div");
+        label.textContent = weekNames[w];
+        weekDiv.appendChild(label);
+
+        const pct = document.createElement("div");
+        pct.textContent = weekPercent + "%";
+        weekDiv.appendChild(pct);
+
+        weeksCont.appendChild(weekDiv);
+      }
+    }
+
+    recalcOverview();
+  </script>
+</body>
+  </html>
+  
