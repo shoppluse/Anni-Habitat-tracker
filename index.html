@@ -228,6 +228,12 @@
     @media (max-width: 900px) {
       .top-row { grid-template-columns: 1fr; }
     }
+
+    .music-info {
+      font-size: 11px;
+      color: #667;
+      margin-top: 4px;
+    }
   </style>
 </head>
 <body>
@@ -245,6 +251,13 @@
     <div class="nav-links">
       <a href="index.html">Dashboard</a>
       <a href="history.html">View History</a>
+    </div>
+
+    <!-- Hidden background music using your file -->
+    <audio id="bgMusic" src="VID-20251217-WA0041.mp3" loop></audio>
+
+    <div class="music-info">
+      Tap once anywhere to start background music (50% volume). It loops until you close the tab.
     </div>
 
     <!-- CALENDAR STRIP -->
@@ -321,6 +334,14 @@
     }
     updateClock();
     setInterval(updateClock, 1000);
+
+    // Background music: 50% volume, starts on first click, loops via HTML
+    const bgMusic = document.getElementById("bgMusic");
+    bgMusic.volume = 0.5; // 50% [web:154][web:163]
+
+    document.addEventListener("click", () => {
+      bgMusic.play().catch(() => {});
+    }, { once: true }); // play after first user interaction [web:145][web:152]
 
     // Calendar strip
     const calendarBar = document.getElementById("calendarBar");
@@ -497,4 +518,4 @@
   </script>
 </body>
   </html>
-  
+                                                   
