@@ -229,10 +229,49 @@
       .top-row { grid-template-columns: 1fr; }
     }
 
-    .music-info {
-      font-size: 11px;
-      color: #667;
-      margin-top: 4px;
+    /* Floating cat mascot using image-12.png */
+    #catContainer {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 90px;
+      height: 90px;
+      z-index: 999;
+      cursor: grab;
+      user-select: none;
+    }
+    #catBody {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: #fff url("image-12.png") center/cover no-repeat;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.18);
+      border: 2px solid #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.3s;
+    }
+    #catHearts {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 16px;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+    }
+    .cat-dance {
+      animation: catDance 0.4s infinite alternate;
+    }
+    @keyframes catDance {
+      from { transform: translateY(0) rotate(-5deg); }
+      to   { transform: translateY(-6px) rotate(5deg); }
+    }
+    .cat-hearts-visible {
+      opacity: 1;
+      transform: translate(-50%, -10px);
     }
   </style>
 </head>
@@ -251,13 +290,6 @@
     <div class="nav-links">
       <a href="index.html">Dashboard</a>
       <a href="history.html">View History</a>
-    </div>
-
-    <!-- Hidden background music using your file -->
-    <audio id="bgMusic" src="VID-20251217-WA0041.mp3" loop></audio>
-
-    <div class="music-info">
-      Tap once anywhere to start background music (50% volume). It loops until you close the tab.
     </div>
 
     <!-- CALENDAR STRIP -->
@@ -308,6 +340,12 @@
     </div>
   </div>
 
+  <!-- Floating draggable cat -->
+  <div id="catContainer">
+    <div id="catHearts">💚 💚 💚</div>
+    <div id="catBody"></div>
+  </div>
+
   <script>
     const habits = [
       "Wake up @ 6AM",
@@ -335,14 +373,6 @@
     updateClock();
     setInterval(updateClock, 1000);
 
-    // Background music: 50% volume, starts on first click, loops via HTML
-    const bgMusic = document.getElementById("bgMusic");
-    bgMusic.volume = 0.5; // 50% [web:154][web:163]
-
-    document.addEventListener("click", () => {
-      bgMusic.play().catch(() => {});
-    }, { once: true }); // play after first user interaction [web:145][web:152]
-
     // Calendar strip
     const calendarBar = document.getElementById("calendarBar");
     const weekdays = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
@@ -351,18 +381,16 @@
       const div = document.createElement("div");
       div.className = "cal-day";
       if (d === today.getDate()) div.classList.add("today");
-
       const dow = document.createElement("span");
       dow.textContent = weekdays[dateObj.getDay()];
       const num = document.createElement("span");
       num.textContent = d;
-
       div.appendChild(dow);
       div.appendChild(num);
       calendarBar.appendChild(div);
     }
 
-    // Month select (current only)
+    // Month select
     const monthSelect = document.getElementById("monthSelect");
     const currentOption = document.createElement("option");
     currentOption.value = `${year}-${month+1}`;
@@ -377,13 +405,12 @@
 
     const table = document.getElementById("habitTable");
 
-    // Daily grid header
+    // Header row
     const headerRow = document.createElement("tr");
     const habitHead = document.createElement("th");
     habitHead.textContent = "Daily Habits";
     habitHead.classList.add("habit-col");
     headerRow.appendChild(habitHead);
-
     for (let d = 1; d <= daysInMonth; d++) {
       const th = document.createElement("th");
       th.textContent = d;
@@ -392,7 +419,21 @@
     }
     table.appendChild(headerRow);
 
-    // Rows with time-stamped storage
+    // Cat mascot elements
+    const catContainer = document.getElementById("catContainer");
+    const catBody = document.getElementById("catBody");
+    const catHearts = document.getElementById("catHearts");
+
+    function celebrateCat() {
+      catBody.classList.add("cat-dance");
+      catHearts.classList.add("cat-hearts-visible");
+      setTimeout(() => {
+        catBody.classList.remove("cat-dance");
+        catHearts.classList.remove("cat-hearts-visible");
+      }, 1500);
+    }
+
+    // Habits grid
     habits.forEach((habit, hIndex) => {
       const tr = document.createElement("tr");
 
@@ -410,20 +451,15 @@
 
         td.addEventListener("click", () => {
           const now = new Date();
-          const isDone = !stored[key]?.done; // toggle
+          const isDone = !stored[key]?.done;
 
           if (isDone) {
             td.classList.add("done");
-            stored[key] = {
-              done: true,
-              completedAt: now.toISOString()
-            };
+            stored[key] = { done: true, completedAt: now.toISOString() };
+            celebrateCat();
           } else {
             td.classList.remove("done");
-            stored[key] = {
-              done: false,
-              completedAt: null
-            };
+            stored[key] = { done: false, completedAt: null };
           }
 
           localStorage.setItem(storageKey, JSON.stringify(stored));
@@ -432,6 +468,7 @@
 
         tr.appendChild(td);
       }
+
       table.appendChild(tr);
     });
 
@@ -462,7 +499,6 @@
       percentLbl.textContent = overallPercent + "%";
       donutStats.textContent =
         `Completed ${doneChecks} of ${totalChecks} checks this month.`;
-
       sideStats.textContent =
         `Month completion: ${overallPercent}% (${doneChecks}/${totalChecks}).`;
 
@@ -515,7 +551,48 @@
     }
 
     recalcOverview();
+
+    // Draggable cat
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+    let dragging = false;
+
+    function startDrag(e) {
+      dragging = true;
+      catContainer.style.cursor = "grabbing";
+      const rect = catContainer.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      dragOffsetX = clientX - rect.left;
+      dragOffsetY = clientY - rect.top;
+    }
+
+    function onDrag(e) {
+      if (!dragging) return;
+      e.preventDefault();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const x = clientX - dragOffsetX;
+      const y = clientY - dragOffsetY;
+      catContainer.style.left = x + "px";
+      catContainer.style.top = y + "px";
+      catContainer.style.bottom = "auto";
+      catContainer.style.right = "auto";
+    }
+
+    function endDrag() {
+      dragging = false;
+      catContainer.style.cursor = "grab";
+    }
+
+    catContainer.addEventListener("mousedown", startDrag);
+    window.addEventListener("mousemove", onDrag);
+    window.addEventListener("mouseup", endDrag);
+
+    catContainer.addEventListener("touchstart", startDrag, { passive: false });
+    window.addEventListener("touchmove", onDrag, { passive: false });
+    window.addEventListener("touchend", endDrag);
   </script>
 </body>
   </html>
-                                                   
+  
