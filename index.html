@@ -45,6 +45,17 @@
       color: #3b4d75;
     }
 
+    .nav-links {
+      margin-bottom: 10px;
+    }
+    .nav-links a {
+      margin-right: 10px;
+      font-size: 13px;
+      text-decoration: none;
+      color: #1f4f8f;
+      font-weight: 600;
+    }
+
     .top-row {
       display: grid;
       grid-template-columns: 220px 1.6fr 1.1fr;
@@ -221,7 +232,7 @@
 </head>
 <body>
   <div class="app">
-    <!-- TOP BAR WITH MONTH + TITLE + LIVE TIME -->
+    <!-- TOP BAR -->
     <div class="title-bar">
       <div class="title-left">
         <div id="monthLabel"></div>
@@ -230,13 +241,19 @@
       <div id="liveClock"></div>
     </div>
 
-    <!-- SMALL CALENDAR STRIP -->
+    <!-- NAV LINKS (Dashboard + History) -->
+    <div class="nav-links">
+      <a href="index.html">Dashboard</a>
+      <a href="history.html">View History</a>
+    </div>
+
+    <!-- CALENDAR STRIP -->
     <div class="card">
       <h3>Calendar</h3>
       <div class="calendar-bar" id="calendarBar"></div>
     </div>
 
-    <!-- TOP SECTION: PANEL + WEEKS + DONUT -->
+    <!-- TOP SECTION -->
     <div class="top-row">
       <!-- Left panel -->
       <div class="card">
@@ -289,13 +306,13 @@
 
     const today = new Date();
     const year  = today.getFullYear();
-    const month = today.getMonth(); // 0-11
+    const month = today.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
     document.getElementById("monthLabel").textContent =
       today.toLocaleString("default", { month: "long", year: "numeric" });
 
-    // ----- LIVE CLOCK -----
+    // Live clock
     function updateClock() {
       const now = new Date();
       const options = { hour: "2-digit", minute: "2-digit", second: "2-digit" };
@@ -305,7 +322,7 @@
     updateClock();
     setInterval(updateClock, 1000);
 
-    // ----- CALENDAR STRIP -----
+    // Calendar strip
     const calendarBar = document.getElementById("calendarBar");
     const weekdays = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
     for (let d = 1; d <= daysInMonth; d++) {
@@ -324,7 +341,7 @@
       calendarBar.appendChild(div);
     }
 
-    // ----- MONTH SELECT (current only) -----
+    // Month select (current only)
     const monthSelect = document.getElementById("monthSelect");
     const currentOption = document.createElement("option");
     currentOption.value = `${year}-${month+1}`;
@@ -332,14 +349,14 @@
       { month: "long", year: "numeric" });
     currentOption.selected = true;
     monthSelect.appendChild(currentOption);
-    monthSelect.disabled = true; // only real current month
+    monthSelect.disabled = true;
 
     const storageKey = `habit-${year}-${month+1}`;
     const stored = JSON.parse(localStorage.getItem(storageKey) || "{}");
 
     const table = document.getElementById("habitTable");
 
-    // ----- DAILY TABLE -----
+    // Daily grid header
     const headerRow = document.createElement("tr");
     const habitHead = document.createElement("th");
     habitHead.textContent = "Daily Habits";
@@ -354,6 +371,7 @@
     }
     table.appendChild(headerRow);
 
+    // Rows with time-stamped storage
     habits.forEach((habit, hIndex) => {
       const tr = document.createElement("tr");
 
@@ -371,7 +389,7 @@
 
         td.addEventListener("click", () => {
           const now = new Date();
-          const isDone = !stored[key]?.done; // toggle
+          const isDone = !stored[key]?.done;
 
           if (isDone) {
             td.classList.add("done");
@@ -402,7 +420,6 @@
     const weeksCont  = document.getElementById("weeksContainer");
     const sideStats  = document.getElementById("sideStats");
 
-    // ----- OVERVIEW CALC -----
     function recalcOverview() {
       const habitsCount = habits.length;
       const totalChecks = habitsCount * daysInMonth;
@@ -479,5 +496,4 @@
     recalcOverview();
   </script>
 </body>
-  </html>
-              
+</html>
