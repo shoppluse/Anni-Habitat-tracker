@@ -229,16 +229,17 @@
       .top-row { grid-template-columns: 1fr; }
     }
 
-    /* Floating cat mascot using image-12.png */
+    /* Floating animated cat using image-12.png */
     #catContainer {
       position: fixed;
       bottom: 20px;
-      right: 20px;
+      left: 10px;
       width: 90px;
       height: 90px;
       z-index: 999;
       cursor: grab;
       user-select: none;
+      animation: catWalkPath 14s linear infinite;
     }
     #catBody {
       width: 90px;
@@ -262,6 +263,10 @@
       transition: opacity 0.3s, transform 0.3s;
       pointer-events: none;
     }
+    .cat-hearts-visible {
+      opacity: 1;
+      transform: translate(-50%, -10px);
+    }
     .cat-dance {
       animation: catDance 0.4s infinite alternate;
     }
@@ -269,9 +274,13 @@
       from { transform: translateY(0) rotate(-5deg); }
       to   { transform: translateY(-6px) rotate(5deg); }
     }
-    .cat-hearts-visible {
-      opacity: 1;
-      transform: translate(-50%, -10px);
+    /* auto-walk path */
+    @keyframes catWalkPath {
+      0%   { transform: translateX(0); }
+      40%  { transform: translateX(calc(100vw - 110px)); }
+      50%  { transform: translateX(calc(100vw - 110px)); }
+      90%  { transform: translateX(0); }
+      100% { transform: translateX(0); }
     }
   </style>
 </head>
@@ -419,7 +428,7 @@
     }
     table.appendChild(headerRow);
 
-    // Cat mascot elements
+    // Cat mascot
     const catContainer = document.getElementById("catContainer");
     const catBody = document.getElementById("catBody");
     const catHearts = document.getElementById("catHearts");
@@ -495,7 +504,8 @@
         : Math.round((doneChecks / totalChecks) * 100);
 
       const degrees = (overallPercent / 100) * 360;
-      donut.style.setProperty("--percent", degrees + "deg");
+      donut.style.setProperty("--
+percent", degrees + "deg");
       percentLbl.textContent = overallPercent + "%";
       donutStats.textContent =
         `Completed ${doneChecks} of ${totalChecks} checks this month.`;
@@ -552,7 +562,7 @@
 
     recalcOverview();
 
-    // Draggable cat
+    // DRAGGABLE CAT + resume walking
     let dragOffsetX = 0;
     let dragOffsetY = 0;
     let dragging = false;
@@ -560,7 +570,16 @@
     function startDrag(e) {
       dragging = true;
       catContainer.style.cursor = "grabbing";
+
       const rect = catContainer.getBoundingClientRect();
+      const computed = window.getComputedStyle(catContainer);
+      const matrix = new DOMMatrixReadOnly(computed.transform);
+      const currentX = matrix.m41;
+      const currentY = matrix.m42;
+
+      catContainer.style.animation = "none";
+      catContainer.style.transform = `translate(${currentX}px, ${currentY}px)`;
+
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       dragOffsetX = clientX - rect.left;
@@ -577,12 +596,12 @@
       catContainer.style.left = x + "px";
       catContainer.style.top = y + "px";
       catContainer.style.bottom = "auto";
-      catContainer.style.right = "auto";
     }
 
     function endDrag() {
       dragging = false;
       catContainer.style.cursor = "grab";
+      catContainer.style.animation = "catWalkPath 14s linear infinite";
     }
 
     catContainer.addEventListener("mousedown", startDrag);
@@ -595,4 +614,3 @@
   </script>
 </body>
   </html>
-  
