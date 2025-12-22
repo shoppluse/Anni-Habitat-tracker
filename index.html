@@ -94,88 +94,26 @@
     }
     .day-header { background: #e8f0fe !important; }
 
-    /* Day cell with fish + water */
+    /* Day cell with progress bar */
     .day-cell {
-      padding: 4px !important;
+      min-height: 32px !important;
+      padding: 8px 4px !important;
+      font-size: 13px !important;
       cursor: pointer;
       transition: all 0.2s;
+      position: relative;
+      text-align: center;
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+    }
+    .day-cell .day-label {
+      position: relative;
+      z-index: 1;
     }
     .day-cell:hover { background: #e3f2fd !important; }
     .day-cell:active {
       filter: brightness(0.92) !important;
       transition: filter 0.1s;
-    }
-
-    .fish-container {
-      position: relative;
-      width: 100%;
-      height: 32px;
-      overflow: hidden;
-    }
-
-    .water {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      background: linear-gradient(180deg, #7dd3fc 0%, #0ea5e9 100%);
-      transition: height 0.4s ease-out;
-      animation: waterWave 2s linear infinite;
-      opacity: 0.9;
-    }
-
-    @keyframes waterWave {
-      0%   { transform: translateX(0); }
-      50%  { transform: translateX(-4px); }
-      100% { transform: translateX(0); }
-    }
-
-    .fish {
-      position: absolute;
-      width: 18px;
-      height: 10px;
-      border-radius: 999px;
-      background: #f97316;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-    }
-    .fish::after {
-      content: "";
-      position: absolute;
-      right: -5px;
-      top: 50%;
-      width: 6px;
-      height: 6px;
-      background: #fb923c;
-      transform: translateY(-50%) rotate(35deg);
-      border-radius: 1px;
-    }
-
-    .fish-wait { opacity: 0.5; }
-    .fish-happy { opacity: 0.9; }
-    .fish-swim {
-      animation: fishSwim 1.2s ease-in-out infinite;
-    }
-    @keyframes fishSwim {
-      0%   { transform: translate(-50%, -50%); }
-      50%  { transform: translate(-40%, -55%); }
-      100% { transform: translate(-50%, -50%); }
-    }
-
-    .fish-dead {
-      opacity: 0.6;
-      filter: grayscale(0.8);
-      transform: translate(-50%, -50%) rotate(90deg);
-    }
-
-    .fish-container .day-label {
-      position: absolute;
-      bottom: 2px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 11px;
-      z-index: 2;
     }
 
     .habit-editor { margin: 12px 0; }
@@ -465,29 +403,17 @@
                 const key = `${hIndex}-${day}`;
                 if (stored[key] && stored[key].done) dayDone++;
               });
-
               const todayDay = today.getDate();
               const pct = habits.length ? (dayDone / habits.length) * 100 : 0;
 
-              let fishState = "";
-              if (pct === 0 && day < todayDay) {
-                fishState = "fish-dead";            // missed past day
-              } else if (pct === 0) {
-                fishState = "fish-wait";            // waiting for water
-              } else if (pct < 100) {
-                fishState = "fish-happy";           // partially done
-              } else {
-                fishState = "fish-swim";            // fully done
-              }
+              let barColor = "#d4edda";              // full/partial base
+              if (pct > 0 && pct < 100) barColor = "#ffe58a"; // yellow when partial
 
-              html += `
-                <td class="day-cell ${day === todayDay ? "today" : ""}" onclick="toggleDay(${day})">
-                  <div class="fish-container">
-                    <div class="water" style="height:${pct}%;"></div>
-                    <div class="fish ${fishState}"></div>
-                    <div class="day-label">${day}</div>
-                  </div>
-                </td>`;
+              html += `<td class="day-cell ${day === todayDay ? "today" : ""}"
+                         style="background-image: linear-gradient(to right, ${barColor} 0%, ${barColor} ${pct}%, transparent ${pct}%, transparent 100%);"
+                         onclick="toggleDay(${day})">
+                         <span class="day-label">${day}</span>
+                       </td>`;
               day++;
             }
           }
