@@ -93,19 +93,29 @@
       font-weight: 600;
     }
     .day-header { background: #e8f0fe !important; }
+
+    /* Day cell with progress bar */
     .day-cell {
       min-height: 32px !important;
       padding: 8px 4px !important;
       font-size: 13px !important;
       cursor: pointer;
       transition: all 0.2s;
+      position: relative;
+      text-align: center;
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+    }
+    .day-cell .day-label {
+      position: relative;
+      z-index: 1;
     }
     .day-cell:hover { background: #e3f2fd !important; }
     .day-cell:active {
       filter: brightness(0.92) !important;
       transition: filter 0.1s;
     }
-    .done { background: #d4edda !important; color: #155724; }
+
     .habit-editor { margin: 12px 0; }
     .habit-row {
       display: flex;
@@ -394,9 +404,16 @@
                 if (stored[key] && stored[key].done) dayDone++;
               });
               const todayDay = today.getDate();
-              const isDone = dayDone > 0;
-              html += `<td class="day-cell ${isDone ? "done" : ""} ${day === todayDay ? "today" : ""}"
-                         onclick="toggleDay(${day})">${day}</td>`;
+              const pct = habits.length ? (dayDone / habits.length) * 100 : 0;
+
+              let barColor = "#d4edda";              // full/partial base
+              if (pct > 0 && pct < 100) barColor = "#ffe58a"; // yellow when partial
+
+              html += `<td class="day-cell ${day === todayDay ? "today" : ""}"
+                         style="background-image: linear-gradient(to right, ${barColor} 0%, ${barColor} ${pct}%, transparent ${pct}%, transparent 100%);"
+                         onclick="toggleDay(${day})">
+                         <span class="day-label">${day}</span>
+                       </td>`;
               day++;
             }
           }
