@@ -193,9 +193,25 @@
     .today-habit-row input[type="checkbox"] {
       margin-right: 8px;
     }
+
+    /* Movable cat */
+    .cat-float {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      width: 70px;
+      cursor: grab;
+      z-index: 1000;
+    }
+    .cat-float.dragging {
+      cursor: grabbing;
+    }
   </style>
 </head>
 <body>
+  <!-- Movable cat -->
+  <img src="image-12.png" alt="Anni cat" class="cat-float" id="anniCat">
+
   <div class="app">
     <div class="title-bar">
       <div>🐱 Anni's Habit Tracker</div>
@@ -530,6 +546,68 @@
       };
 
       renderAll();
+
+      // === Draggable cat ===
+      const cat = document.getElementById("anniCat");
+      if (cat) {
+        let isDown = false;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        cat.addEventListener("mousedown", startDrag);
+        cat.addEventListener("touchstart", startDrag, { passive: false });
+
+        function startDrag(e) {
+          e.preventDefault();
+          isDown = true;
+          cat.classList.add("dragging");
+
+          const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+          const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+          const rect = cat.getBoundingClientRect();
+          offsetX = clientX - rect.left;
+          offsetY = clientY - rect.top;
+
+          document.addEventListener("mousemove", onDrag);
+          document.addEventListener("mouseup", endDrag);
+          document.addEventListener("touchmove", onDrag, { passive: false });
+          document.addEventListener("touchend", endDrag);
+        }
+
+        function onDrag(e) {
+          if (!isDown) return;
+          e.preventDefault();
+
+          const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+          const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+          let x = clientX - offsetX;
+          let y = clientY - offsetY;
+
+          const maxX = window.innerWidth - cat.offsetWidth;
+          const maxY = window.innerHeight - cat.offsetHeight;
+
+          if (x < 0) x = 0;
+          if (y < 0) y = 0;
+          if (x > maxX) x = maxX;
+          if (y > maxY) y = maxY;
+
+          cat.style.left = x + "px";
+          cat.style.top = y + "px";
+          cat.style.right = "auto";
+          cat.style.bottom = "auto";
+        }
+
+        function endDrag() {
+          isDown = false;
+          cat.classList.remove("dragging");
+          document.removeEventListener("mousemove", onDrag);
+          document.removeEventListener("mouseup", endDrag);
+          document.removeEventListener("touchmove", onDrag);
+          document.removeEventListener("touchend", endDrag);
+        }
+      }
     });
   </script>
 </body>
