@@ -90,14 +90,21 @@
   </div>
 
   <script>
-    // Same habits as index.html
-    const habits = [
-      "Wake up @ 6AM",
-      "No Social Media till 9",
-      "Workout / Walking",
-      "Study, 60 min",
-      "Read 30 min"
-    ];
+    // Same habits as index.html – but now loaded from localStorage so names match user edits
+    const HABITS_KEY = "anniHabits";
+    function loadHabits() {
+      const json = localStorage.getItem(HABITS_KEY);
+      if (json) return JSON.parse(json);
+      return [
+        "Wake up @ 6AM",
+        "No Social Media till 9",
+        "Workout / Walking",
+        "Study, 60 min",
+        "Read 30 min"
+      ];
+    }
+
+    const habits = loadHabits();
 
     const today = new Date();
     const year  = today.getFullYear();
@@ -114,17 +121,23 @@
       const entry = stored[key];
       if (!entry || !entry.done) return;
 
+      const dt = entry.completedAt ? new Date(entry.completedAt) : null;
+
       entries.push({
         habit: habits[hIndex] || `Habit ${hIndex + 1}`,
         day,
-        time: entry.completedAt
-          ? new Date(entry.completedAt).toLocaleTimeString()
-          : "—"
+        date: dt
+          ? dt.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })
+          : "—",
+        time: dt
+          ? dt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+          : "—",
+        timestamp: dt ? dt.getTime() : 0
       });
     });
 
-    // Sort by day then time string
-    entries.sort((a, b) => a.day === b.day ? a.time.localeCompare(b.time) : a.day - b.day);
+    // Sort by actual timestamp (day + time)
+    entries.sort((a, b) => a.timestamp - b.timestamp);
 
     if (entries.length === 0) {
       const p = document.createElement("p");
@@ -137,6 +150,7 @@
         <thead>
           <tr>
             <th>Day</th>
+            <th>Date</th>
             <th>Habit</th>
             <th>Completion time</th>
           </tr>
@@ -151,6 +165,7 @@
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${row.day}</td>
+          <td>${row.date}</td>
           <td>${row.habit}</td>
           <td>${row.time}</td>
         `;
