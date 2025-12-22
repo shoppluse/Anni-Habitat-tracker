@@ -58,7 +58,7 @@
 
     .top-row {
       display: grid;
-      grid-template-columns: 220px 1.6fr 1.1fr;
+      grid-template-columns: 260px 1.6fr 1.1fr;
       gap: 16px;
     }
 
@@ -114,6 +114,73 @@
       margin-top: 10px;
       font-size: 12px;
       line-height: 1.5;
+    }
+
+    /* Habit editor */
+    .habit-editor {
+      margin-top: 8px;
+      border-top: 1px dashed #d2daf5;
+      padding-top: 6px;
+      font-size: 12px;
+    }
+    .habit-editor-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #3a4b7c;
+    }
+    .habit-list {
+      max-height: 150px;
+      overflow-y: auto;
+      margin-bottom: 6px;
+    }
+    .habit-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+    .habit-row input[type="text"] {
+      flex: 1;
+      padding: 3px 4px;
+      font-size: 12px;
+      border-radius: 4px;
+      border: 1px solid #c9d3f0;
+    }
+    .habit-row button {
+      border: none;
+      background: #ff6b6b;
+      color: #fff;
+      font-size: 11px;
+      padding: 3px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .habit-row button:hover {
+      background: #e25555;
+    }
+    .habit-add {
+      display: flex;
+      gap: 4px;
+      margin-top: 4px;
+    }
+    .habit-add input {
+      flex: 1;
+      padding: 3px 4px;
+      font-size: 12px;
+      border-radius: 4px;
+      border: 1px solid #c9d3f0;
+    }
+    .habit-add button {
+      border: none;
+      background: #4caf50;
+      color: #fff;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .habit-add button:hover {
+      background: #3e9440;
     }
 
     /* Weekly bars */
@@ -308,6 +375,16 @@
           <select id="monthSelect"></select>
         </div>
         <div class="side-stats" id="sideStats"></div>
+
+        <!-- Habit editor UI -->
+        <div class="habit-editor">
+          <div class="habit-editor-title">Your habits</div>
+          <div class="habit-list" id="habitList"></div>
+          <div class="habit-add">
+            <input type="text" id="newHabitInput" placeholder="Add new habit..." />
+            <button id="addHabitBtn">Add</button>
+          </div>
+        </div>
       </div>
 
       <!-- Weekly bars -->
@@ -347,14 +424,7 @@
   </div>
 
   <script>
-    const habits = [
-      "Wake up @ 6AM",
-      "No Social Media till 9",
-      "Workout / Walking",
-      "Study, 60 min",
-      "Read 30 min"
-    ];
-
+    // ----- DATE/TIME -----
     const today = new Date();
     const year  = today.getFullYear();
     const month = today.getMonth();
@@ -363,7 +433,6 @@
     document.getElementById("monthLabel").textContent =
       today.toLocaleString("default", { month: "long", year: "numeric" });
 
-    // Live clock
     function updateClock() {
       const now = new Date();
       const options = { hour: "2-digit", minute: "2-digit", second: "2-digit" };
@@ -373,7 +442,7 @@
     updateClock();
     setInterval(updateClock, 1000);
 
-    // Calendar strip
+    // ----- CALENDAR STRIP -----
     const calendarBar = document.getElementById("calendarBar");
     const weekdays = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
     for (let d = 1; d <= daysInMonth; d++) {
@@ -390,7 +459,7 @@
       calendarBar.appendChild(div);
     }
 
-    // Month select
+    // ----- MONTH SELECT -----
     const monthSelect = document.getElementById("monthSelect");
     const currentOption = document.createElement("option");
     currentOption.value = `${year}-${month+1}`;
@@ -400,26 +469,36 @@
     monthSelect.appendChild(currentOption);
     monthSelect.disabled = true;
 
+    // ----- HABITS stored in localStorage -----
+    const HABITS_KEY = "anniHabits";
+    function loadHabits() {
+      const json = localStorage.getItem(HABITS_KEY);
+      if (json) return JSON.parse(json);
+      const defaults = [
+        "Wake up @ 6AM",
+        "No Social Media till 9",
+        "Workout / Walking",
+        "Study, 60 min",
+        "Read 30 min"
+      ];
+      localStorage.setItem(HABITS_KEY, JSON.stringify(defaults));
+      return defaults;
+    }
+    function saveHabits(arr) {
+      localStorage.setItem(HABITS_KEY, JSON.stringify(arr));
+    }
+
+    let habits = loadHabits(); // user‑modifiable list [web:186][web:187]
+
     const storageKey = `habit-${year}-${month+1}`;
     const stored = JSON.parse(localStorage.getItem(storageKey) || "{}");
 
     const table = document.getElementById("habitTable");
+    const habitListEl = document.getElementById("habitList");
+    const newHabitInput = document.getElementById("newHabitInput");
+    const addHabitBtn = document.getElementById("addHabitBtn");
 
-    // Header row
-    const headerRow = document.createElement("tr");
-    const habitHead = document.createElement("th");
-    habitHead.textContent = "Daily Habits";
-    habitHead.classList.add("habit-col");
-    headerRow.appendChild(habitHead);
-    for (let d = 1; d <= daysInMonth; d++) {
-      const th = document.createElement("th");
-      th.textContent = d;
-      th.classList.add("day-header");
-      headerRow.appendChild(th);
-    }
-    table.appendChild(headerRow);
-
-    // Cat mascot elements
+    // ----- CAT -----
     const catContainer = document.getElementById("catContainer");
     const catBody = document.getElementById("catBody");
     const catHearts = document.getElementById("catHearts");
@@ -433,50 +512,129 @@
       }, 1500);
     }
 
-    // Habits grid
-    habits.forEach((habit, hIndex) => {
-      const tr = document.createElement("tr");
+    // ----- HABIT EDITOR -----
+    function renderHabitEditor() {
+      habitListEl.innerHTML = "";
+      habits.forEach((name, index) => {
+        const row = document.createElement("div");
+        row.className = "habit-row";
 
-      const habitCell = document.createElement("td");
-      habitCell.textContent = habit;
-      habitCell.classList.add("habit-col");
-      tr.appendChild(habitCell);
-
-      for (let d = 1; d <= daysInMonth; d++) {
-        const td = document.createElement("td");
-        td.classList.add("day-cell");
-        const key = `${hIndex}-${d}`;
-
-        if (stored[key]?.done) td.classList.add("done");
-
-        td.addEventListener("click", () => {
-          const now = new Date();
-          const isDone = !stored[key]?.done;
-
-          if (isDone) {
-            td.classList.add("done");
-            stored[key] = { done: true, completedAt: now.toISOString() };
-            celebrateCat();
-          } else {
-            td.classList.remove("done");
-            stored[key] = { done: false, completedAt: null };
-          }
-
-          localStorage.setItem(storageKey, JSON.stringify(stored));
-          recalcOverview();
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = name;
+        input.addEventListener("change", () => {
+          habits[index] = input.value.trim() || `Habit ${index+1}`;
+          saveHabits(habits);
+          rebuildGrid();
         });
 
-        tr.appendChild(td);
-      }
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "X";
+        delBtn.title = "Delete habit";
+        delBtn.addEventListener("click", () => {
+          if (!confirm("Remove this habit?")) return;
+          // shift stored keys down for habits after deleted index
+          const newStored = {};
+          Object.keys(stored).forEach(key => {
+            const [h, d] = key.split("-").map(Number);
+            if (h !== index) {
+              const newIndex = h > index ? h - 1 : h;
+              newStored[`${newIndex}-${d}`] = stored[key];
+            }
+          });
+          Object.keys(stored).forEach(k => delete stored[k]);
+          Object.assign(stored, newStored);
+          localStorage.setItem(storageKey, JSON.stringify(stored));
 
-      table.appendChild(tr);
+          habits.splice(index, 1);
+          saveHabits(habits);
+          renderHabitEditor();
+          rebuildGrid();
+        });
+
+        row.appendChild(input);
+        row.appendChild(delBtn);
+        habitListEl.appendChild(row);
+      });
+    }
+
+    addHabitBtn.addEventListener("click", () => {
+      const text = newHabitInput.value.trim();
+      if (!text) return;
+      habits.push(text);
+      saveHabits(habits);
+      newHabitInput.value = "";
+      renderHabitEditor();
+      rebuildGrid();
     });
 
+    // ----- GRID + OVERVIEW -----
     const donut      = document.getElementById("donut");
     const percentLbl = document.getElementById("percentLabel");
     const donutStats = document.getElementById("donutStats");
     const weeksCont  = document.getElementById("weeksContainer");
     const sideStats  = document.getElementById("sideStats");
+
+    function attachCellHandler(td, hIndex, day) {
+      const key = `${hIndex}-${day}`;
+      if (stored[key]?.done) td.classList.add("done");
+
+      td.addEventListener("click", () => {
+        const now = new Date();
+        const isDone = !stored[key]?.done;
+
+        if (isDone) {
+          td.classList.add("done");
+          stored[key] = { done: true, completedAt: now.toISOString() };
+          celebrateCat();
+        } else {
+          td.classList.remove("done");
+          stored[key] = { done: false, completedAt: null };
+        }
+
+        localStorage.setItem(storageKey, JSON.stringify(stored));
+        recalcOverview();
+      });
+    }
+
+    function rebuildGrid() {
+      table.innerHTML = "";
+
+      // Header row
+      const headerRow = document.createElement("tr");
+      const habitHead = document.createElement("th");
+      habitHead.textContent = "Daily Habits";
+      habitHead.classList.add("habit-col");
+      headerRow.appendChild(habitHead);
+      for (let d = 1; d <= daysInMonth; d++) {
+        const th = document.createElement("th");
+        th.textContent = d;
+        th.classList.add("day-header");
+        headerRow.appendChild(th);
+      }
+      table.appendChild(headerRow);
+
+      // Habits rows
+      habits.forEach((habitName, hIndex) => {
+        const tr = document.createElement("tr");
+
+        const habitCell = document.createElement("td");
+        habitCell.textContent = habitName;
+        habitCell.classList.add("habit-col");
+        tr.appendChild(habitCell);
+
+        for (let d = 1; d <= daysInMonth; d++) {
+          const td = document.createElement("td");
+          td.classList.add("day-cell");
+          attachCellHandler(td, hIndex, d);
+          tr.appendChild(td);
+        }
+
+        table.appendChild(tr);
+      });
+
+      recalcOverview();
+    }
 
     function recalcOverview() {
       const habitsCount = habits.length;
@@ -550,9 +708,7 @@
       }
     }
 
-    recalcOverview();
-
-    // Draggable cat
+    // ----- DRAGGABLE CAT -----
     let dragOffsetX = 0;
     let dragOffsetY = 0;
     let dragging = false;
@@ -588,10 +744,13 @@
     catContainer.addEventListener("mousedown", startDrag);
     window.addEventListener("mousemove", onDrag);
     window.addEventListener("mouseup", endDrag);
-
     catContainer.addEventListener("touchstart", startDrag, { passive: false });
     window.addEventListener("touchmove", onDrag, { passive: false });
     window.addEventListener("touchend", endDrag);
+
+    // ----- INITIAL RENDER -----
+    renderHabitEditor();
+    rebuildGrid();
   </script>
 </body>
 </html>
