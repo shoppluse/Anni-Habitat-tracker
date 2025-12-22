@@ -36,8 +36,8 @@
       font-weight: 600;
     }
     .helper-text {
-      font-size: 12px; 
-      color: #666; 
+      font-size: 12px;
+      color: #666;
       margin: 12px 0;
     }
     .helper-text a { color: #1f4f8f; }
@@ -46,10 +46,10 @@
       border-radius: 8px;
       border: 1px solid #dde3f0;
       padding: 12px 16px;
-      margin-bottom: 12px; /* Breathing room between cards */
+      margin-bottom: 12px;
     }
-    h2, h3 { 
-      font-size: 14px !important; 
+    h2, h3 {
+      font-size: 14px !important;
       margin-bottom: 10px !important;
       color: #2c3e50;
     }
@@ -69,11 +69,11 @@
     .stat-number { font-size: 24px; font-weight: 700; color: #1f4f8f; }
     .stat-label { font-size: 11px; color: #666; }
     .reset-btn {
-      font-size: 11px; 
-      padding: 4px 8px; 
-      background: #fee; 
-      border: 1px solid #fcc; 
-      border-radius: 4px; 
+      font-size: 11px;
+      padding: 4px 8px;
+      background: #fee;
+      border: 1px solid #fcc;
+      border-radius: 4px;
       cursor: pointer;
       margin-left: 8px;
     }
@@ -92,23 +92,21 @@
       background: #f1f3f8;
       font-weight: 600;
     }
-    .day-header { background: #e8f0fe !important; } /* Visual anchor */
+    .day-header { background: #e8f0fe !important; }
     .day-cell {
-      min-height: 32px !important; /* Bigger touch target */
+      min-height: 32px !important;
       padding: 8px 4px !important;
       font-size: 13px !important;
       cursor: pointer;
       transition: all 0.2s;
     }
     .day-cell:hover { background: #e3f2fd !important; }
-    .day-cell:active { 
-      filter: brightness(0.92) !important; 
+    .day-cell:active {
+      filter: brightness(0.92) !important;
       transition: filter 0.1s;
     }
     .done { background: #d4edda !important; color: #155724; }
-    .habit-editor {
-      margin: 12px 0;
-    }
+    .habit-editor { margin: 12px 0; }
     .habit-row {
       display: flex;
       align-items: center;
@@ -142,8 +140,8 @@
       margin-left: 8px;
     }
     .editor-hint {
-      font-size: 11px; 
-      color: #888; 
+      font-size: 11px;
+      color: #888;
       margin-top: 4px;
     }
     tbody tr:nth-child(even) {
@@ -153,6 +151,47 @@
       font-size: 13px;
       margin-top: 8px;
       color: #666;
+    }
+
+    /* Today panel toggle */
+    .toggle-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+    .toggle-header span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .toggle-arrow {
+      transition: transform 0.2s;
+      font-size: 14px;
+    }
+    .toggle-arrow.open {
+      transform: rotate(90deg);
+    }
+    #todayPanel {
+      margin-top: 8px;
+      border-top: 1px dashed #dde3f0;
+      padding-top: 8px;
+      display: none;
+    }
+    .today-habit-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 0;
+      font-size: 13px;
+    }
+    .today-habit-row label {
+      flex: 1;
+    }
+    .today-habit-row input[type="checkbox"] {
+      margin-right: 8px;
     }
   </style>
 </head>
@@ -197,12 +236,26 @@
         <thead id="calendarHead"></thead>
         <tbody id="calendarBody"></tbody>
       </table>
+
+      <div class="toggle-header" onclick="toggleTodayPanel()">
+        <span>
+          <span class="toggle-arrow" id="todayArrow">▶</span>
+          Today’s habits
+        </span>
+        <span style="font-size:11px; color:#777;">Tap to show / hide</span>
+      </div>
+      <div id="todayPanel"></div>
     </div>
 
     <div class="card">
       <h3>📈 Weekly Progress</h3>
       <table id="weeklyTable">
-        <thead><tr><th>Week</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th><th>Total</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Week</th><th>Mon</th><th>Tue</th><th>Wed</th>
+            <th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th><th>Total</th>
+          </tr>
+        </thead>
         <tbody id="weeklyBody"></tbody>
       </table>
     </div>
@@ -224,11 +277,13 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", function() {
-      // Constants
       const HABITS_KEY = "anniHabits";
-      const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth();
+      const storageKey = `habit-${year}-${month + 1}`;
+      let stored = JSON.parse(localStorage.getItem(storageKey) || "{}");
 
-      // Load habits
       function loadHabits() {
         const json = localStorage.getItem(HABITS_KEY);
         if (json) return JSON.parse(json);
@@ -242,18 +297,11 @@
       }
 
       let habits = loadHabits();
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = today.getMonth();
-      const storageKey = `habit-${year}-${month + 1}`;
-      let stored = JSON.parse(localStorage.getItem(storageKey) || "{}");
 
-      // Save habits
       function saveHabits() {
         localStorage.setItem(HABITS_KEY, JSON.stringify(habits));
       }
 
-      // Toggle habit
       function toggleHabit(hIndex, day) {
         const key = `${hIndex}-${day}`;
         if (!stored[key]) stored[key] = {};
@@ -267,28 +315,27 @@
         renderAll();
       }
 
-      // Reset month
       window.resetMonth = function() {
-        if (confirm('Clear all data for this month?')) {
+        if (confirm("Clear all data for this month?")) {
           localStorage.removeItem(storageKey);
           stored = {};
           renderAll();
         }
       };
 
-      // Render everything
       function renderAll() {
         renderStats();
         renderCalendar();
         renderWeekly();
         renderMonthly();
         renderHabits();
+        renderTodayPanel();
       }
 
-      // Stats
       function renderStats() {
-        let totalDone = 0, streak = 0, bestStreak = 0;
-        let currentStreak = 0, best = 0;
+        let totalDone = 0;
+        let currentStreak = 0;
+        let best = 0;
         const daysInMonth = new Date(year, month + 1, 0).getDate();
 
         for (let day = 1; day <= daysInMonth; day++) {
@@ -298,19 +345,19 @@
             if (stored[key] && stored[key].done) dayDone++;
           });
           totalDone += dayDone;
-          if (dayDone === habits.length) {
+          if (dayDone === habits.length && habits.length > 0) {
             currentStreak++;
             best = Math.max(best, currentStreak);
           } else {
             currentStreak = 0;
           }
         }
+
         document.getElementById("totalDone").textContent = totalDone;
         document.getElementById("streak").textContent = currentStreak;
         document.getElementById("bestStreak").textContent = best;
       }
 
-      // Calendar
       function renderCalendar() {
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         const firstDay = new Date(year, month, 1).getDay();
@@ -330,10 +377,10 @@
                 const key = `${hIndex}-${day}`;
                 if (stored[key] && stored[key].done) dayDone++;
               });
-              const pct = dayDone / habits.length;
               const todayDay = today.getDate();
-              html += `<td class="day-cell ${dayDone > 0 ? 'done' : ''} ${day === todayDay ? 'today' : ''}" 
-                       onclick="toggleHabitAll(${day})">${day}</td>`;
+              const isDone = dayDone > 0;
+              html += `<td class="day-cell ${isDone ? "done" : ""} ${day === todayDay ? "today" : ""}"
+                         onclick="toggleDay(${day})">${day}</td>`;
               day++;
             }
           }
@@ -344,29 +391,44 @@
         document.getElementById("calendarBody").innerHTML = html;
       }
 
-      // Weekly
+      window.toggleDay = function(day) {
+        habits.forEach((_, hIndex) => {
+          const key = `${hIndex}-${day}`;
+          const existing = stored[key] && stored[key].done;
+          if (!stored[key]) stored[key] = {};
+          const newState = !existing;
+          stored[key].done = newState;
+          if (newState) {
+            stored[key].completedAt = new Date().toISOString();
+          } else {
+            delete stored[key].completedAt;
+          }
+        });
+        localStorage.setItem(storageKey, JSON.stringify(stored));
+        renderAll();
+      };
+
       function renderWeekly() {
-        // Simplified weekly render - implement as needed
-        document.getElementById("weeklyBody").innerHTML = "<tr><td colspan='8' style='text-align:center;color:#666;'>Weekly breakdown coming soon</td></tr>";
+        document.getElementById("weeklyBody").innerHTML =
+          "<tr><td colspan='9' style='text-align:center;color:#666;'>Weekly breakdown coming soon</td></tr>";
       }
 
-      // Monthly
       function renderMonthly() {
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
         let html = "";
         habits.forEach((habit, hIndex) => {
           let doneCount = 0;
-          const daysInMonth = new Date(year, month + 1, 0).getDate();
           for (let day = 1; day <= daysInMonth; day++) {
             const key = `${hIndex}-${day}`;
             if (stored[key] && stored[key].done) doneCount++;
           }
           html += `<tr><td>${habit}</td><td>${doneCount}/${daysInMonth}</td></tr>`;
         });
-        document.getElementById("monthlyHead").innerHTML = "<tr><th>Habit</th><th>Done</th></tr>";
+        document.getElementById("monthlyHead").innerHTML =
+          "<tr><th>Habit</th><th>Done</th></tr>";
         document.getElementById("monthlyBody").innerHTML = html;
       }
 
-      // Habits editor
       function renderHabits() {
         const container = document.getElementById("habitEditor");
         container.innerHTML = "";
@@ -374,22 +436,23 @@
           const row = document.createElement("div");
           row.className = "habit-row";
           row.innerHTML = `
-            <input class="habit-input" value="${habit}" onchange="updateHabit(${index}, this.value)" 
-                   onblur="saveHabits()" onfocus="this.parentElement.classList.add('editing')">
+            <input class="habit-input" value="${habit}"
+              oninput="updateHabit(${index}, this.value)"
+              onfocus="this.parentElement.classList.add('editing')"
+              onblur="this.parentElement.classList.remove('editing')">
             <button class="delete-btn" onclick="deleteHabit(${index})">Delete</button>
           `;
           container.appendChild(row);
         });
 
-        // Add habit button
         const addBtn = document.createElement("div");
-        addBtn.style.cssText = "padding:8px; cursor:pointer; color:#1f4f8f; font-size:13px;";
+        addBtn.style.cssText =
+          "padding:8px; cursor:pointer; color:#1f4f8f; font-size:13px;";
         addBtn.innerHTML = "+ Add new habit";
         addBtn.onclick = addHabit;
         container.appendChild(addBtn);
       }
 
-      // Habit editor functions
       window.updateHabit = function(index, name) {
         habits[index] = name;
         saveHabits();
@@ -413,7 +476,59 @@
         }
       };
 
-      // Initial render
+      window.toggleTodayPanel = function() {
+        const panel = document.getElementById("todayPanel");
+        const arrow = document.getElementById("todayArrow");
+        const isOpen = panel.style.display === "block";
+        panel.style.display = isOpen ? "none" : "block";
+        arrow.classList.toggle("open", !isOpen);
+      };
+
+      function renderTodayPanel() {
+        const panel = document.getElementById("todayPanel");
+        if (!panel) return;
+
+        const day = today.getDate();
+        panel.innerHTML = "";
+
+        if (!habits.length) {
+          panel.innerHTML =
+            "<div style='font-size:12px; color:#777;'>No habits defined.</div>";
+          return;
+        }
+
+        habits.forEach((habit, hIndex) => {
+          const key = `${hIndex}-${day}`;
+          const isDone = stored[key] && stored[key].done;
+
+          const row = document.createElement("div");
+          row.className = "today-habit-row";
+          row.innerHTML = `
+            <label>
+              <input type="checkbox" ${isDone ? "checked" : ""}
+                onchange="toggleTodayHabit(${hIndex}, ${day}, this.checked)">
+              ${habit}
+            </label>
+          `;
+          panel.appendChild(row);
+        });
+      }
+
+      window.toggleTodayHabit = function(hIndex, day, checked) {
+        const key = `${hIndex}-${day}`;
+        if (!stored[key]) stored[key] = {};
+        stored[key].done = checked;
+
+        if (checked) {
+          stored[key].completedAt = new Date().toISOString();
+        } else {
+          delete stored[key].completedAt;
+        }
+
+        localStorage.setItem(storageKey, JSON.stringify(stored));
+        renderAll();
+      };
+
       renderAll();
     });
   </script>
